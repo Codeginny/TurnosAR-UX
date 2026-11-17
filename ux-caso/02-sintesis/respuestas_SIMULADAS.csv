@@ -1,0 +1,33 @@
+rol,edad,frecuencia,canal,facilidad,molestias,reprogramo,recordatorio,turnos_perdidos_semana,facilidad_ver_dia,tarea_tediosa,facilidad_reprogramar,comentario
+Paciente,30-44,Pocas veces por año,WhatsApp,4,Formularios largos;Llamar en horario de atención,Sí,"Sí, por WhatsApp",,,,,Para cambiar el turno tuve que llamar tres veces
+Paciente,30-44,Una vez por mes,Llamada,3,No recibir confirmación;No ver horarios libres,No,"Sí, por WhatsApp",,,,,No me llegó confirmación y no sabía si tenía turno
+Paciente,45-59,Una vez por mes,Llamada,3,No ver horarios libres;Llamar en horario de atención,Sí,"Sí, por mail",,,,,Quisiera ver los horarios libres sin llamar
+Paciente,45-59,Pocas veces por año,Llamada,4,Formularios largos;No ver horarios libres,No,"Sí, por WhatsApp",,,,,Para cambiar el turno tuve que llamar tres veces
+Paciente,30-44,Una vez por mes,WhatsApp,1,Llamar en horario de atención;Esperar respuesta,No,"Sí, por WhatsApp",,,,,Para cambiar el turno tuve que llamar tres veces
+Paciente,45-59,Una vez por mes,Llamada,5,Formularios largos;Llamar en horario de atención,Sí,"Sí, por WhatsApp",,,,,No me llegó confirmación y no sabía si tenía turno
+Paciente,30-44,Pocas veces por año,Llamada,4,Llamar en horario de atención;Formularios largos,No,"Sí, por WhatsApp",,,,,Me gustaría un recordatorio el día anterior
+Paciente,30-44,Pocas veces por año,WhatsApp,1,Llamar en horario de atención;Esperar respuesta,Sí,"Sí, por WhatsApp",,,,,Me gustaría un recordatorio el día anterior
+Paciente,45-59,Pocas veces por año,WhatsApp,5,No recibir confirmación;Esperar respuesta,No,"Sí, por WhatsApp",,,,,Quisiera ver los horarios libres sin llamar
+Paciente,18-29,Pocas veces por año,Presencial,3,No recibir confirmación;No ver horarios libres,Sí,"Sí, por WhatsApp",,,,,No me llegó confirmación y no sabía si tenía turno
+Paciente,18-29,Pocas veces por año,WhatsApp,5,Llamar en horario de atención;Formularios largos,No,"Sí, por WhatsApp",,,,,Escribo por WhatsApp y me contestan al otro día
+Paciente,60+,Pocas veces por año,WhatsApp,2,No recibir confirmación;Formularios largos,Sí,"Sí, por WhatsApp",,,,,Escribo por WhatsApp y me contestan al otro día
+Paciente,45-59,Una vez por mes,Presencial,3,Llamar en horario de atención;Esperar respuesta,No,"Sí, por WhatsApp",,,,,Quisiera ver los horarios libres sin llamar
+Paciente,30-44,Una vez por mes,WhatsApp,3,Esperar respuesta;No recibir confirmación,No,"Sí, por WhatsApp",,,,,No me llegó confirmación y no sabía si tenía turno
+Paciente,30-44,Pocas veces por año,Llamada,5,Formularios largos;No recibir confirmación,Sí,"Sí, por mail",,,,,Quisiera ver los horarios libres sin llamar
+Paciente,60+,Pocas veces por año,Llamada,3,Llamar en horario de atención;No ver horarios libres,No,"Sí, por mail",,,,,Quisiera ver los horarios libres sin llamar
+Paciente,30-44,Pocas veces por año,WhatsApp,2,Esperar respuesta;No ver horarios libres,No,"Sí, por mail",,,,,Para cambiar el turno tuve que llamar tres veces
+Paciente,30-44,Pocas veces por año,WhatsApp,3,Formularios largos;No recibir confirmación,Sí,"Sí, por WhatsApp",,,,,Quisiera ver los horarios libres sin llamar
+Paciente,18-29,Pocas veces por año,WhatsApp,4,No ver horarios libres;Esperar respuesta,Sí,"Sí, por WhatsApp",,,,,Escribo por WhatsApp y me contestan al otro día
+Paciente,45-59,Una vez por mes,Llamada,2,No ver horarios libres;Esperar respuesta,No,"Sí, por mail",,,,,Escribo por WhatsApp y me contestan al otro día
+Profesional,60+,Varias veces por día,,,,,,3-5,4,,,"Al empezar el día quiero ver la lista, no el calendario del mes"
+Profesional,18-29,Varias veces por día,,,,,,3-5,4,,,Pierdo turnos porque la gente no avisa
+Profesional,30-44,Varias veces por día,,,,,,3-5,1,,,Pierdo turnos porque la gente no avisa
+Profesional,60+,Varias veces por día,,,,,,1-2,2,,,Uso Google Calendar y la secretaria otra agenda
+Profesional,30-44,Varias veces por día,,,,,,1-2,1,,,"Al empezar el día quiero ver la lista, no el calendario del mes"
+Profesional,45-59,Varias veces por día,,,,,,0,4,,,Uso Google Calendar y la secretaria otra agenda
+Secretaria,45-59,Varias veces por día,,,,,,,,Reprogramar,1,Se me mezclan las agendas de los profesionales
+Secretaria,18-29,Varias veces por día,,,,,,,,Coordinar varias agendas,3,"Atiendo teléfono, WhatsApp y mostrador a la vez"
+Secretaria,30-44,Varias veces por día,,,,,,,,Reprogramar,2,Se me mezclan las agendas de los profesionales
+Secretaria,30-44,Varias veces por día,,,,,,,,Buscar huecos libres,1,"Atiendo teléfono, WhatsApp y mostrador a la vez"
+Secretaria,30-44,Varias veces por día,,,,,,,,Confirmar asistencia,1,"Atiendo teléfono, WhatsApp y mostrador a la vez"
+Secretaria,30-44,Varias veces por día,,,,,,,,Confirmar asistencia,2,Confirmar uno por uno por WhatsApp me lleva la mañana
