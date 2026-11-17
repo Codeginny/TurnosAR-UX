@@ -66,39 +66,69 @@ const FacturaPreview = ({ comprobante, emisor, receptor, turno, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
-  /**
-   * Simula la descarga del PDF del comprobante.
-   * En producción generaría PDF real desde backend.
-   *
-   * @returns {void}
-   */
-  const handleDownload = () => {
+  const printOrDownload = () => {
     setLoading(true);
-    // Simular descarga del PDF
+    const content = document.getElementById('factura-content').innerHTML;
+    
+    // Crear un iframe invisible para no abrir pestañas nuevas
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = 'none';
+    document.body.appendChild(iframe);
+
+    const printDocument = iframe.contentWindow.document;
+
+    // Inyectamos el contenido aislado para evitar CSS conflicts y bugs de 8 hojas
+    printDocument.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Factura TurnosAR</title>
+          <script src="https://cdn.tailwindcss.com"></script>
+          <style>
+            @media print {
+              @page { margin: 1cm; size: a4 portrait; }
+              body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+              .print-hidden { display: none !important; }
+            }
+            body { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+          </style>
+        </head>
+        <body class="bg-white">
+          <div class="max-w-3xl mx-auto">
+            ${content}
+          </div>
+        </body>
+      </html>
+    `);
+    
+    printDocument.close();
+
+    // Esperar a que Tailwind aplique estilos y lanzar diálogo
     setTimeout(() => {
-      setLoading(false);
-      setSuccessMessage('Factura descargada exitosamente');
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+        setLoading(false);
+        setSuccessMessage('El documento está listo para guardar o imprimir.');
+      }, 500);
     }, 1500);
   };
 
-  /**
-   * Abre diálogo de impresión del navegador.
-   * Permite imprimir o guardar como PDF nativo.
-   *
-   * @returns {void}
-   */
-  const handlePrint = () => {
-    window.print();
-  };
-
-  /**
-   * Simula el envío del comprobante por WhatsApp.
-   * En producción usaría API de WhatsApp Business.
-   *
-   * @returns {void}
-   */
   const handleShare = () => {
-    // Simular envío por WhatsApp
+    const paciente = receptor?.nombre || turno?.pacienteNombre || 'Paciente';
+    const profesional = emisor?.nombre || 'Profesional';
+    const fecha = formatDate(turno?.fecha || new Date());
+    const monto = formatCurrency(comprobante.montoTotal || comprobante.monto || 0);
+    
+    const text = encodeURIComponent(`Hola ${paciente}, te envío el comprobante de tu turno del ${fecha} con ${profesional} por un total de ${monto}.`);
+    window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
     setSuccessMessage('Factura enviada por WhatsApp al paciente');
   };
 
@@ -134,9 +164,10 @@ const FacturaPreview = ({ comprobante, emisor, receptor, turno, onClose }) => {
   };
 
   return (
-    <div className="factura-print-area bg-white rounded-lg shadow-2xl w-full max-h-[90vh] overflow-y-auto print:shadow-none print:max-h-none print:w-full print:max-w-none relative">
-      {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-4 flex items-center justify-between print:bg-none print:text-black print:border-b-2 print:border-black">
+    <div className="bg-white rounded-lg shadow-2xl w-full max-h-[90vh] overflow-y-auto print:shadow-none print:max-h-none print:w-[100vw] print:h-[100vh] print:overflow-hidden relative print:text-[10px]">
+      <div id="factura-content" className="factura-print-area bg-white relative p-4 print:p-0">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-3 sm:p-4 flex items-center justify-between print:bg-transparent print:text-black print:border-b print:border-black">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
               <span className="text-blue-600 font-bold text-sm">ARCA</span>
@@ -277,35 +308,33 @@ const FacturaPreview = ({ comprobante, emisor, receptor, turno, onClose }) => {
           </div>
 
           {/* QR y Código de Barras (Simulado) */}
-          <div className="flex items-center justify-between border-t border-gray-200 pt-4">
+          <div className="flex items-center justify-between border-t border-gray-200 pt-3">
             <div className="text-center">
-              <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center mb-2">
-                <div className="text-xs text-gray-400 text-center">
-                  QR<br/>AFIP
-                </div>
+              <div className="w-20 h-20 sm:w-24 sm:h-24 bg-white rounded-lg flex items-center justify-center mb-1 mx-auto">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.afip.gob.ar/fe/qr" alt="QR AFIP" className="w-full h-full object-contain" />
               </div>
-              <p className="text-xs text-gray-500">Escanear para validar</p>
+              <p className="text-[10px] text-gray-500">Escanear para validar</p>
             </div>
             <div className="text-center">
-              <div className="h-12 w-48 bg-gray-100 rounded flex items-center justify-center mb-2">
-                <div className="text-xs text-gray-400">||||||||||||||||||||||||</div>
+              <div className="h-10 sm:h-12 w-40 sm:w-48 bg-white rounded flex items-center justify-center mb-1 mx-auto">
+                <img src="https://barcode.tec-it.com/barcode.ashx?data=30712345678010001&code=Code128&dpi=96" alt="Código de Barras" className="w-full h-full object-contain mix-blend-multiply" />
               </div>
-              <p className="text-xs text-gray-500">Código de Barras</p>
+              <p className="text-[10px] text-gray-500">Código de Barras</p>
             </div>
           </div>
 
           {/* Acciones */}
           <div className="flex gap-3 pt-4 print:hidden">
             <button
-              onClick={handleDownload}
+              onClick={printOrDownload}
               disabled={loading}
               className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
             >
               <Download className="w-4 h-4" />
-              {loading ? 'Descargando...' : 'Descargar PDF'}
+              {loading ? 'Preparando...' : 'Descargar PDF'}
             </button>
             <button
-              onClick={handlePrint}
+              onClick={printOrDownload}
               className="flex-1 flex items-center justify-center gap-2 bg-gray-600 text-white py-3 rounded-lg hover:bg-gray-700 transition-colors"
             >
               <Printer className="w-4 h-4" />
@@ -348,6 +377,7 @@ const FacturaPreview = ({ comprobante, emisor, receptor, turno, onClose }) => {
             </div>
           </div>
         )}
+      </div>
     </div>
   );
 };

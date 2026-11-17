@@ -196,6 +196,35 @@ export const checkServerHealth = async () => {
 };
 
 /**
+ * Obtiene el perfil completo del profesional autenticado
+ * @returns {Promise<Object>} - Perfil del profesional
+ */
+export const getProfessionalProfile = async () => {
+  try {
+    const response = await backendAPI.get('/professional/profile');
+    return response.data;
+  } catch (error) {
+    console.error('Error al obtener perfil profesional:', error.response?.data?.error || error.message);
+    throw error;
+  }
+};
+
+/**
+ * Actualiza los datos de consultorio del profesional autenticado
+ * @param {Object} consultorioData - Datos del consultorio
+ * @returns {Promise<Object>} - Respuesta del servidor
+ */
+export const updateConsultorio = async (consultorioData) => {
+  try {
+    const response = await backendAPI.put('/professional/consultorio', consultorioData);
+    return response.data;
+  } catch (error) {
+    console.error('Error al actualizar consultorio:', error.response?.data?.error || error.message);
+    throw error;
+  }
+};
+
+/**
  * Obtiene estadísticas del sistema
  * @returns {Promise<Object>} - Estadísticas del sistema
  */
@@ -255,6 +284,8 @@ export default {
   // Profesionales
   registerProfessional,
   loginProfessional,
+  getProfessionalProfile,
+  updateConsultorio,
   
   // Pacientes
   registerPatient,

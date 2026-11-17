@@ -50,7 +50,7 @@ const Home = () => {
           <div className="hidden md:block">
             <div className="aspect-video w-full h-full rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/30 bg-blue-100">
               <img 
-                src="/imagenes/banners/clinica.jpg" 
+                src="/assets/banners/clinica.jpg" 
                 alt="Clínica" 
                 className="w-full h-full object-cover"
               />
@@ -93,10 +93,10 @@ const Home = () => {
 
         {/* grid de imágenes */}
         <div className="grid grid-cols-2 gap-3">
-          <img src="/imagenes/pacientes/imagen-1.jpg" alt="Paciente 1" className="rounded-xl shadow object-cover w-full aspect-[4/3]" />
-          <img src="/imagenes/pacientes/imagen-2.jpg" alt="Paciente 2" className="rounded-xl shadow object-cover w-full aspect-[4/3]" />
-          <img src="/imagenes/pacientes/imagen-3.jpg" alt="Paciente 3" className="rounded-xl shadow object-cover w-full aspect-[4/3]" />
-          <img src="/imagenes/pacientes/imagen-4.jpg" alt="Paciente 4" className="rounded-xl shadow object-cover w-full aspect-[4/3]" />
+          <img src="/assets/pacientes/imagen-1.jpg" alt="Paciente 1" className="rounded-xl shadow object-cover w-full aspect-[4/3]" />
+          <img src="/assets/pacientes/imagen-2.jpg" alt="Paciente 2" className="rounded-xl shadow object-cover w-full aspect-[4/3]" />
+          <img src="/assets/pacientes/imagen-3.jpg" alt="Paciente 3" className="rounded-xl shadow object-cover w-full aspect-[4/3]" />
+          <img src="/assets/pacientes/imagen-4.jpg" alt="Paciente 4" className="rounded-xl shadow object-cover w-full aspect-[4/3]" />
         </div>
       </section>
 
@@ -115,7 +115,7 @@ const Home = () => {
 
         {/* imagen alineada */}
         <div className="w-full rounded-xl overflow-hidden shadow">
-          <img src="/imagenes/banners/clinica2.jpg" alt="Clínica2" className="w-full object-cover aspect-[4/3]" />
+          <img src="/assets/banners/clinica2.jpg" alt="Clínica2" className="w-full object-cover aspect-[4/3]" />
         </div>
       </section>
 

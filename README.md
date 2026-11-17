@@ -178,14 +178,22 @@ npx playwright show-report
 git clone <URL_REPOSITORIO>
 cd medsmart-data-saas
 
-# 2. Instalar dependencias del proyecto
+# 2. Instalar dependencias del backend
+cd server
 npm install
 
-# 3. Configurar variables de entorno (.env) en el directorio /server
+# 3. Configurar variables de entorno del backend (.env) en el directorio /server
 # Crear archivo server/.env con los siguientes parámetros:
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/turnos_medicos_db"
+DATABASE_URL="postgresql://usuario:password@localhost:5432/turnos_medicos_db"
 JWT_SECRET="tu_clave_secreta_jwt_de_firma"
 PORT=3001
+
+# 4. Instalar dependencias del frontend
+cd ../client
+npm install
+
+# 5. Configurar variables de entorno del frontend (.env) en el directorio /client
+VITE_API_URL=http://localhost:3001/api
 ```
 
 ### 8.3 Sembrado Masivo de Datos de Prueba (Seeding)
@@ -205,15 +213,9 @@ Para arrancar el frontend de React y el backend de Express simultáneamente:
 npm run dev:full
 ```
 
-## 9. Credenciales de Acceso para Pruebas (Evaluación)
+## 9. Entorno de Demostración
 
-Para revisar e interactuar con el Dashboard totalmente poblado con métricas dinámicas, gráficos cargados e historial de consultas de demostración, inicie sesión en la plataforma con las siguientes credenciales de prueba preconfiguradas:
-
-**Perfil Profesional (Dr. Carlos Méndez)**
-- **Email:** carlos.mendez@turnosar.com
-- **Contraseña:** password123
-- **Rol:** professional
-- **Contexto de demostración:** 90 turnos históricos distribuidos en 2026, con heatmap de capacidad activa, ingresos consolidados y módulo de facturación disponible para "Completar y Emitir CAE" sobre los pacientes de la lista de Julio de 2026.
+Para acceder a la plataforma y visualizar el Dashboard con datos precargados, por favor consulte el documento de "Instrucciones de Evaluación" (PDF) adjunto en la entrega, donde encontrará las credenciales de acceso y la guía paso a paso.
 
 
 <img width="1411" height="893" alt="Captura desde 2026-07-11 21-27-17" src="https://github.com/user-attachments/assets/774f0ab5-61f7-42c7-a374-b39cf7074ddb" />

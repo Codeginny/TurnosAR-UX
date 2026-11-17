@@ -3,7 +3,8 @@ import BarChart01 from './charts/BarChart01';
 import DoughnutChart from './charts/DoughnutChart';
 import LineChart01 from './charts/LineChart01';
 import FacturaPreview from './FacturaPreview';
-import { DollarSign, Calendar, TrendingUp, AlertTriangle, Users } from 'lucide-react';
+import { backendAPI } from '../api/axiosInstance';
+import { DollarSign, Calendar, TrendingUp, AlertTriangle, Users, Download } from 'lucide-react';
 
 /**
  * @typedef {Object} ProfessionalStatsProps
@@ -68,6 +69,37 @@ const ProfessionalStats = ({ stats, loading, error, selectedPeriod, onPeriodChan
   const [localError, setLocalError] = useState('');
   const [showFacturaModal, setShowFacturaModal] = useState(false);
   const [facturaData, setFacturaData] = useState(null);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async (formato) => {
+    try {
+      setExporting(true);
+      const endpoint = formato === 'excel' ? '/stats/export' : '/stats/export-csv';
+      const response = await backendAPI.get(endpoint, {
+        params: { range: selectedPeriod === 'año' ? 'year' : 'month' },
+        responseType: 'blob' // CRÍTICO: sin esto el archivo binario se corrompe
+      });
+
+      const blob = new Blob([response.data]);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+
+      // Extraer filename del header si el backend lo manda
+      const disposition = response.headers['content-disposition'];
+      const match = disposition?.match(/filename="(.+)"/);
+      link.download = match ? match[1] : `reporte.${formato === 'excel' ? 'xlsx' : 'csv'}`;
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Error al exportar:', err);
+    } finally {
+      setExporting(false);
+    }
+  };
   
   // Usar props si están disponibles, si no usar estado local
   const finalStats = stats || localStats;
@@ -199,9 +231,27 @@ const ProfessionalStats = ({ stats, loading, error, selectedPeriod, onPeriodChan
           <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
       )}
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-        📊 Tu Consultorio
-      </h2>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+          📊 Tu Consultorio
+        </h2>
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleExport('excel')}
+            disabled={exporting}
+            className="flex items-center gap-1 px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
+          >
+            <Download className="w-4 h-4" /> Excel
+          </button>
+          <button
+            onClick={() => handleExport('csv')}
+            disabled={exporting}
+            className="flex items-center gap-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          >
+            <Download className="w-4 h-4" /> CSV
+          </button>
+        </div>
+      </div>
 
       {/* KPIs - Métricas Clave */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

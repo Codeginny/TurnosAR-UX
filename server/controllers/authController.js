@@ -10,7 +10,8 @@ const {
   changePasswordSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
-  validateCredentialsSchema
+  validateCredentialsSchema,
+  updateProfessionalConsultorioSchema
 } = require('../validators/schemas');
 
 const SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 10;
@@ -112,7 +113,7 @@ const registerProfessional = async (req, res) => {
       });
     }
 
-    const { nombre, email, telefono, especialidad, password, dni } = validationResult.data;
+    const { nombre, email, telefono, especialidad, password, dni, provincia } = validationResult.data;
 
     // Auto-generar DNI si no se proporciona (para compatibilidad)
     const dniValue = dni ? parseInt(dni) : Math.floor(10000000 + Math.random() * 90000000);
@@ -143,13 +144,14 @@ const registerProfessional = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
     const result = await query(
-      `INSERT INTO profesionales (dni, nombre, email, telefono, especialidad, password) 
-       VALUES ($1, $2, $3, $4, $5, $6) 
-       RETURNING id, dni, nombre, email, telefono, especialidad, created_at`,
-      [dniValue, nombre, email, telefono, especialidad, hashedPassword]
+      `INSERT INTO profesionales (dni, nombre, email, telefono, especialidad, password, clinica, provincia, ciudad) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+       RETURNING id, dni, nombre, email, telefono, especialidad`,
+      [dniValue, nombre, email, telefono, especialidad, hashedPassword, 'Sin especificar', provincia || 'Sin especificar', 'Sin especificar']
     );
 
     const profesional = result.rows[0];
+    profesional.created_at = new Date().toISOString(); // Agregado en JS para no romper la interfaz
 
     // Generar token JWT para auto-login después de registro
     const token = jwt.sign(
@@ -1157,6 +1159,66 @@ const getProfessionals = async (req, res) => {
   }
 };
 
+// Actualizar datos de consultorio del profesional
+const updateProfessionalConsultorio = async (req, res) => {
+  try {
+    const professionalId = req.user.id;
+    const validationResult = updateProfessionalConsultorioSchema.safeParse(req.body);
+    
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        error: 'Datos inválidos',
+        details: validationResult.error.errors 
+      });
+    }
+
+    const { clinica, provincia, ciudad, direccion } = validationResult.data;
+
+    const result = await query(
+      `UPDATE profesionales 
+       SET clinica = COALESCE($1, clinica), 
+           provincia = COALESCE($2, provincia), 
+           ciudad = COALESCE($3, ciudad),
+           direccion = COALESCE($4, direccion)
+       WHERE id = $5
+       RETURNING id, nombre, email, telefono, especialidad, clinica, provincia, ciudad, direccion`,
+      [clinica, provincia, ciudad, direccion, professionalId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Profesional no encontrado' });
+    }
+
+    res.json({
+      message: 'Consultorio actualizado exitosamente',
+      profesional: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error al actualizar consultorio:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+// Obtener datos del profesional autenticado
+const getProfessionalProfile = async (req, res) => {
+  try {
+    const professionalId = req.user.id;
+    const result = await query(
+      'SELECT id, nombre, email, telefono, especialidad, clinica, provincia, ciudad, direccion, cuit, precio_consulta FROM profesionales WHERE id = $1',
+      [professionalId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Profesional no encontrado' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error al obtener perfil profesional:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
 module.exports = {
   registerProfessional,
   loginProfessional,
@@ -1168,5 +1230,7 @@ module.exports = {
   forgotPassword,
   resetPassword,
   validateCredentials,
-  getProfessionals
+  getProfessionals,
+  updateProfessionalConsultorio,
+  getProfessionalProfile
 };

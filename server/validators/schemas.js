@@ -148,7 +148,21 @@ const registerProfessionalSchema = z.object({
   telefono: z.string().min(10, 'El teléfono debe tener al menos 10 caracteres').max(20, 'El teléfono no puede exceder 20 caracteres'),
   especialidad: z.string().min(3, 'La especialidad debe tener al menos 3 caracteres').max(100, 'La especialidad no puede exceder 100 caracteres'),
   password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres').max(100, 'La contraseña no puede exceder 100 caracteres'),
-  dni: z.string().min(7, 'El DNI debe tener al menos 7 caracteres').max(9, 'El DNI no puede exceder 9 caracteres').regex(/^\d+$/, 'El DNI debe contener solo números').optional()
+  dni: z.string().min(7, 'El DNI debe tener al menos 7 caracteres').max(9, 'El DNI no puede exceder 9 caracteres').regex(/^\d+$/, 'El DNI debe contener solo números').optional(),
+  provincia: z.string().max(100, 'La provincia no puede exceder 100 caracteres').optional()
+});
+
+/**
+ * Esquema de validación Zod para actualización de consultorio del profesional.
+ * Todos los campos son opcionales.
+ *
+ * @constant {z.ZodObject}
+ */
+const updateProfessionalConsultorioSchema = z.object({
+  clinica: z.string().max(100, 'La clínica no puede exceder 100 caracteres').optional(),
+  provincia: z.string().max(100, 'La provincia no puede exceder 100 caracteres').optional(),
+  ciudad: z.string().max(100, 'La ciudad no puede exceder 100 caracteres').optional(),
+  direccion: z.string().max(200, 'La dirección no puede exceder 200 caracteres').optional()
 });
 
 /**
@@ -360,6 +374,7 @@ module.exports = {
   loginPatientSchema,
   changePasswordSchema,
   updatePatientSchema,
+  updateProfessionalConsultorioSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
   validateCredentialsSchema,

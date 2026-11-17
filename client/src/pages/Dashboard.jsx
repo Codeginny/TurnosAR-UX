@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Calendar, User, Stethoscope, Clock, CheckCircle, AlertCircle, ChevronLeft, ChevronRight, X, Pause, DollarSign, BarChart3, MessageSquare, FileText, Loader2 } from 'lucide-react';
+import { Calendar, User, Stethoscope, Clock, CheckCircle, AlertCircle, ChevronLeft, ChevronRight, X, Pause, DollarSign, BarChart3, MessageSquare, FileText, Loader2, MapPin, Building2, Save, Pencil } from 'lucide-react';
 import { AppointmentContext } from '../context/AppointmentContext';
 import ProfessionalStats from '../components/ProfessionalStats';
 import CapacityHeatmap from '../components/CapacityHeatmap';
 import { backendAPI } from '../api/axiosInstance';
+import { getProfessionalProfile, updateConsultorio } from '../services/auth';
 import FacturaPreview from '../components/FacturaPreview';
 import { toast } from 'react-toastify';
 
@@ -104,6 +105,11 @@ const Dashboard = () => {
   const [generandoFactura, setGenerandoFactura] = useState(false);
   const [turnoFacturando, setTurnoFacturando] = useState(null);
 
+  // Estados para Consultorio
+  const [consultorioData, setConsultorioData] = useState({ clinica: '', provincia: '', ciudad: '', direccion: '' });
+  const [editingConsultorio, setEditingConsultorio] = useState(false);
+  const [savingConsultorio, setSavingConsultorio] = useState(false);
+
   const { appointments, loading, updateAppointment } = useContext(AppointmentContext);
 
   useEffect(() => {
@@ -132,6 +138,47 @@ const Dashboard = () => {
       window.removeEventListener('selectRole', handleRoleChange);
     };
   }, []);
+
+  // Cargar datos del consultorio
+  useEffect(() => {
+    const loadConsultorio = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          const profile = await getProfessionalProfile();
+          setConsultorioData({
+            clinica: profile.clinica || '',
+            provincia: profile.provincia || '',
+            ciudad: profile.ciudad || '',
+            direccion: profile.direccion || ''
+          });
+        }
+      } catch (err) {
+        console.error('Error al cargar datos del consultorio:', err);
+      }
+    };
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      const userObj = JSON.parse(userData);
+      if (userObj.isProfessional) {
+        loadConsultorio();
+      }
+    }
+  }, []);
+
+  const handleSaveConsultorio = async () => {
+    try {
+      setSavingConsultorio(true);
+      await updateConsultorio(consultorioData);
+      setEditingConsultorio(false);
+      toast.success('Consultorio actualizado correctamente');
+    } catch (err) {
+      console.error('Error al guardar consultorio:', err);
+      toast.error('Error al guardar los datos del consultorio');
+    } finally {
+      setSavingConsultorio(false);
+    }
+  };
 
   /**
    * Obtiene estadísticas del profesional desde el backend.
@@ -253,18 +300,19 @@ const Dashboard = () => {
     try {
       setGenerandoFactura(true);
       setTurnoFacturando(paciente.id);
-      const response = await backendAPI.post('/billing/invoice', {
-        appointmentId: paciente.id
+      const response = await backendAPI.post('/billing/generate', {
+        turnoId: paciente.id
       });
       setFacturaData(response.data);
       setShowFacturaModal(true);
       toast.success('Factura generada con éxito');
       fetchProfessionalStats(); // Refrescar estadísticas
     } catch (err) {
-      console.error('Error al generar factura:', err);
       if (err.response?.status === 409) {
+        // Ya existe factura para este turno, la obtenemos silenciosamente
         handleVerFactura(paciente);
       } else {
+        console.error('Error al generar factura:', err);
         toast.error('Error al generar factura: ' + (err.response?.data?.error || err.message));
       }
     } finally {
@@ -640,6 +688,117 @@ const Dashboard = () => {
                       {activeAppointments.filter(apt => apt.status === 'Confirmado' || apt.status === 'Completado').length}
                     </span>
                   </div>
+                </div>
+              </div>
+
+              {/* Mi Consultorio */}
+              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg dark:shadow-xl p-6 transition-colors duration-300">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2 transition-colors duration-300">
+                    <Building2 className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                    Mi Consultorio
+                  </h3>
+                  {!editingConsultorio ? (
+                    <button
+                      onClick={() => setEditingConsultorio(true)}
+                      className="p-1.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                      title="Editar consultorio"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleSaveConsultorio}
+                      disabled={savingConsultorio}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    >
+                      <Save className="w-3.5 h-3.5" />
+                      {savingConsultorio ? 'Guardando...' : 'Guardar'}
+                    </button>
+                  )}
+                </div>
+                <div className="space-y-3">
+                  {editingConsultorio ? (
+                    <>
+                      <div>
+                        <label className="text-xs text-gray-500 dark:text-gray-400">Clínica / Consultorio</label>
+                        <input
+                          type="text"
+                          value={consultorioData.clinica === 'Sin especificar' ? '' : consultorioData.clinica}
+                          onChange={(e) => setConsultorioData(prev => ({ ...prev, clinica: e.target.value }))}
+                          className="w-full mt-1 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300 transition-colors"
+                          placeholder="Ej: Sanatorio Pasteur"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500 dark:text-gray-400">Provincia</label>
+                        <select
+                          value={consultorioData.provincia === 'Sin especificar' ? '' : consultorioData.provincia}
+                          onChange={(e) => setConsultorioData(prev => ({ ...prev, provincia: e.target.value }))}
+                          className="w-full mt-1 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300 transition-colors"
+                        >
+                          <option value="">Seleccioná provincia</option>
+                          {['Buenos Aires', 'CABA', 'Catamarca', 'Chaco', 'Chubut', 'Córdoba', 'Corrientes', 'Entre Ríos', 'Formosa', 'Jujuy', 'La Pampa', 'La Rioja', 'Mendoza', 'Misiones', 'Neuquén', 'Río Negro', 'Salta', 'San Juan', 'San Luis', 'Santa Cruz', 'Santa Fe', 'Santiago del Estero', 'Tierra del Fuego', 'Tucumán'].map(prov => (
+                            <option key={prov} value={prov}>{prov}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500 dark:text-gray-400">Ciudad</label>
+                        <input
+                          type="text"
+                          value={consultorioData.ciudad === 'Sin especificar' ? '' : consultorioData.ciudad}
+                          onChange={(e) => setConsultorioData(prev => ({ ...prev, ciudad: e.target.value }))}
+                          className="w-full mt-1 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300 transition-colors"
+                          placeholder="Ej: San Fernando del Valle"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500 dark:text-gray-400">Dirección</label>
+                        <input
+                          type="text"
+                          value={consultorioData.direccion || ''}
+                          onChange={(e) => setConsultorioData(prev => ({ ...prev, direccion: e.target.value }))}
+                          className="w-full mt-1 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300 transition-colors"
+                          placeholder="Ej: Av. Güemes 550"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-start gap-3 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
+                        <Building2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Clínica</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                            {consultorioData.clinica && consultorioData.clinica !== 'Sin especificar' ? consultorioData.clinica : <span className="text-gray-400 italic">Sin completar</span>}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
+                        <MapPin className="w-4 h-4 text-indigo-600 dark:text-indigo-400 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Ubicación</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                            {consultorioData.provincia && consultorioData.provincia !== 'Sin especificar' 
+                              ? `${consultorioData.ciudad && consultorioData.ciudad !== 'Sin especificar' ? consultorioData.ciudad + ', ' : ''}${consultorioData.provincia}`
+                              : <span className="text-gray-400 italic">Sin completar</span>}
+                          </p>
+                          {consultorioData.direccion && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{consultorioData.direccion}</p>
+                          )}
+                        </div>
+                      </div>
+                      {(!consultorioData.clinica || consultorioData.clinica === 'Sin especificar') && (
+                        <button
+                          onClick={() => setEditingConsultorio(true)}
+                          className="w-full mt-2 px-4 py-2 text-sm text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                        >
+                          + Completar datos del consultorio
+                        </button>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -1055,7 +1214,13 @@ const Dashboard = () => {
             >
               <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
-            <FacturaPreview factura={facturaData} />
+            <FacturaPreview 
+              comprobante={facturaData.comprobante} 
+              emisor={facturaData.emisor} 
+              receptor={facturaData.receptor} 
+              turno={facturaData.turno} 
+              onClose={() => setShowFacturaModal(false)} 
+            />
           </div>
         </div>
       )}

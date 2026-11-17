@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Phone, Calendar, CheckCircle, Lock } from 'lucide-react';
+import { User, Mail, Phone, Calendar, CheckCircle, Lock, MapPin } from 'lucide-react';
 import { registerProfessional } from '../services/auth';
 import { useUser } from '../context/UserContext';
 import { validateArgentinePhone, cleanPhoneForStorage } from '../utils/validations';
@@ -16,11 +16,20 @@ const Register = () => {
     email: '',
     telefono: '',
     especialidad: 'Medicina General',
+    provincia: '',
     password: ''
   });
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState({});
+
+  const provincias = [
+    'Buenos Aires', 'CABA', 'Catamarca', 'Chaco', 'Chubut',
+    'Córdoba', 'Corrientes', 'Entre Ríos', 'Formosa', 'Jujuy',
+    'La Pampa', 'La Rioja', 'Mendoza', 'Misiones', 'Neuquén',
+    'Río Negro', 'Salta', 'San Juan', 'San Luis', 'Santa Cruz',
+    'Santa Fe', 'Santiago del Estero', 'Tierra del Fuego', 'Tucumán'
+  ];
 
   const especialidades = [
     'Medicina General',
@@ -87,6 +96,11 @@ const Register = () => {
           isProfessional: true
         };
         
+        // Guardar token JWT en localStorage
+        if (response.token) {
+          localStorage.setItem('token', response.token);
+        }
+
         // Guardar en localStorage
         login(userData);
         
@@ -99,8 +113,11 @@ const Register = () => {
       }
       
     } catch (error) {
-      console.error('Error en registro:', error);
-      alert('Error en el registro. Intenta nuevamente.');
+      console.error('Error en registro:', error.response?.data || error);
+      const detalle = error.response?.data?.details 
+        ? JSON.stringify(error.response.data.details) 
+        : error.response?.data?.error || 'Intenta nuevamente.';
+      alert('Error en el registro: ' + detalle);
     } finally {
       setLoading(false);
     }
@@ -215,6 +232,25 @@ const Register = () => {
                 >
                   {especialidades.map(esp => (
                     <option key={esp} value={esp}>{esp}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-300">
+                  <MapPin className="w-4 h-4 inline mr-2" />
+                  Provincia
+                </label>
+                <select
+                  name="provincia"
+                  value={form.provincia}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-300 focus:border-blue-500 transition-colors duration-300"
+                  required
+                >
+                  <option value="">Seleccioná tu provincia</option>
+                  {provincias.map(prov => (
+                    <option key={prov} value={prov}>{prov}</option>
                   ))}
                 </select>
               </div>
