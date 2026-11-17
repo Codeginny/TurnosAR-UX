@@ -510,9 +510,125 @@ const simularRefundMercadoPago = async (paymentId, monto) => {
   }
 };
 
+// 🕒 HORARIOS OCUPADOS DE UN PROFESIONAL EN UNA FECHA
+// Se usa para mostrar los horarios reales (libres y ocupados) al sacar o reprogramar un turno.
+const getOccupiedSlots = async (req, res) => {
+  try {
+    const { profesional, fecha } = req.query;
+
+    if (!profesional || !/^\d{4}-\d{2}-\d{2}$/.test(fecha || '')) {
+      return res.status(400).json({ error: 'Faltan el profesional o la fecha (AAAA-MM-DD).' });
+    }
+
+    const result = await query(
+      `SELECT to_char(hora, 'HH24:MI') AS hora FROM turnos
+       WHERE (profesional = $1 OR profesional LIKE $1 || ' - %') AND fecha = $2 AND estado <> 'cancelado'`,
+      [profesional, fecha]
+    );
+
+    res.json(result.rows.map(r => r.hora));
+  } catch (error) {
+    console.error('Error al obtener horarios ocupados:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+// Busca el turno y verifica que el usuario pueda tocarlo:
+// el paciente sólo los suyos y el profesional sólo los de su agenda.
+const findOwnAppointment = async (req, res) => {
+  const turnoResult = await query('SELECT * FROM turnos WHERE id = $1', [parseInt(req.params.id)]);
+  if (turnoResult.rows.length === 0) {
+    res.status(404).json({ error: 'Turno no encontrado' });
+    return null;
+  }
+  const turno = turnoResult.rows[0];
+
+  if (req.user.role === 'patient' && parseInt(turno.paciente_id) !== parseInt(req.user.id)) {
+    res.status(403).json({ error: 'No estás autorizado para modificar este turno.' });
+    return null;
+  }
+  if (req.user.role === 'professional') {
+    const prof = await query('SELECT nombre FROM profesionales WHERE id = $1', [parseInt(req.user.id)]);
+    if (prof.rows.length > 0 && prof.rows[0].nombre !== turno.profesional.split(' - ')[0]) {
+      res.status(403).json({ error: 'Este turno no pertenece a tu agenda.' });
+      return null;
+    }
+  }
+  return turno;
+};
+
+// 🔁 REPROGRAMAR TURNO
+// El paciente elige un horario libre y el turno se mueve en un solo paso, sin llamar al consultorio.
+const rescheduleAppointment = async (req, res) => {
+  try {
+    const { fecha, hora } = req.body;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha || '') || !/^\d{2}:\d{2}$/.test(hora || '')) {
+      return res.status(400).json({ error: 'Fecha u hora inválidas.' });
+    }
+
+    const turno = await findOwnAppointment(req, res);
+    if (!turno) return;
+
+    if (turno.estado === 'cancelado' || turno.estado === 'atendido') {
+      return res.status(400).json({ error: 'Este turno ya no se puede reprogramar.' });
+    }
+
+    const ocupado = await query(
+      `SELECT 1 FROM turnos
+       WHERE (profesional = $1 OR profesional LIKE $1 || ' - %') AND fecha = $2 AND hora = $3
+         AND estado <> 'cancelado' AND id <> $4`,
+      [turno.profesional.split(' - ')[0], fecha, hora, turno.id]
+    );
+    if (ocupado.rows.length > 0) {
+      return res.status(409).json({ error: 'Ese horario se acaba de ocupar. Elegí otro.' });
+    }
+
+    const result = await query(
+      `UPDATE turnos SET fecha = $1, hora = $2, estado = 'pendiente', updated_at = CURRENT_TIMESTAMP
+       WHERE id = $3 RETURNING *`,
+      [fecha, hora, turno.id]
+    );
+
+    res.json({ message: 'Turno reprogramado', turno: result.rows[0] });
+  } catch (error) {
+    console.error('Error al reprogramar turno:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+// ✅ CAMBIAR ESTADO DE UN TURNO
+// El paciente sólo puede cancelar; el profesional (o su secretaria) confirma, marca ausente o atendido.
+const ESTADOS_PROFESIONAL = ['pendiente', 'confirmado', 'cancelado', 'ausente', 'atendido'];
+
+const updateAppointmentStatus = async (req, res) => {
+  try {
+    const { estado } = req.body;
+    const permitidos = req.user.role === 'patient' ? ['cancelado'] : ESTADOS_PROFESIONAL;
+    if (!permitidos.includes(estado)) {
+      return res.status(400).json({ error: 'Estado no permitido.' });
+    }
+
+    const turno = await findOwnAppointment(req, res);
+    if (!turno) return;
+
+    const result = await query(
+      'UPDATE turnos SET estado = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
+      [estado, turno.id]
+    );
+
+    res.json({ message: 'Estado actualizado', turno: result.rows[0] });
+  } catch (error) {
+    console.error('Error al actualizar estado del turno:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
 module.exports = {
   createAppointment,
   getAppointmentsByPatient,
   getAllAppointments,
-  validateTokenAndRefund
+  validateTokenAndRefund,
+  getOccupiedSlots,
+  rescheduleAppointment,
+  updateAppointmentStatus
 };

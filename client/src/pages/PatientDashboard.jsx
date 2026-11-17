@@ -30,11 +30,13 @@ import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
 import PaymentModal from '../components/PaymentModal';
 import CommitmentModal from '../components/CommitmentModal';
+import HorarioPicker from '../components/turnos/HorarioPicker';
+import ReprogramarSheet from '../components/turnos/ReprogramarSheet';
 
 const PatientDashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, updateUser } = useUser();
+  const { user, updateUser, logout } = useUser();
   const { addNotification, addPerfilUpdateNotification } = useNotifications();
   const [activeTab, setActiveTab] = useState('turno');
   const [formData, setFormData] = useState({
@@ -48,9 +50,7 @@ const PatientDashboard = () => {
     nroAfiliado: ''
   });
   const [loading, setLoading] = useState(false);
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [availableHours, setAvailableHours] = useState([]);
+  const [turnoAReprogramar, setTurnoAReprogramar] = useState(null);
   const [turnoRegistrado, setTurnoRegistrado] = useState(false);
   const [showDataForm, setShowDataForm] = useState(false);
   const [userData, setUserData] = useState({
@@ -684,27 +684,7 @@ const PatientDashboard = () => {
     if (!turnoACancelar) return;
 
     try {
-      // Intentar cancelar en /turnos primero
-      try {
-        await backendAPI.put(`/turnos/${turnoACancelar.id}`, {
-          ...turnoACancelar,
-          estado: 'cancelado',
-          fechaCancelacion: new Date().toISOString()
-        });
-      } catch (turnoError) {
-        console.log('Endpoint /turnos no disponible, intentando cancelar en /pacientes');
-      }
-
-      // Si no hay /turnos, cancelar en /pacientes
-      try {
-        await backendAPI.put(`/pacientes/${turnoACancelar.id}`, {
-          ...turnoACancelar,
-          estado: 'cancelado',
-          fechaCancelacion: new Date().toISOString()
-        });
-      } catch (pacienteError) {
-        console.log('No se pudo cancelar en /pacientes');
-      }
+      await backendAPI.patch(`/turnos/${turnoACancelar.id}/estado`, { estado: 'cancelado' });
 
       // Actualizar estado local
       setTurnos(prev => prev.map(t => 
@@ -754,6 +734,15 @@ const PatientDashboard = () => {
     setShowSuccessModal(true);
   };
 
+  // Se puede reprogramar un turno activo que todavía no pasó
+  const sePuedeReprogramar = (turno) => {
+    if (!turno?.fecha || ['cancelado', 'atendido', 'ausente'].includes(turno.estado)) return false;
+    const [h = 0, m = 0] = String(turno.hora || '00:00').split(':').map(Number);
+    const inicio = new Date(`${String(turno.fecha).slice(0, 10)}T00:00:00`);
+    inicio.setHours(h, m);
+    return inicio > new Date();
+  };
+
   // Función para verificar si se puede cancelar (48 horas antes)
   const sePuedeCancelar = (fechaTurno) => {
     if (!fechaTurno) return false;
@@ -763,36 +752,6 @@ const PatientDashboard = () => {
     const diferenciaHoras = (fechaTurnoDate - ahora) / (1000 * 60 * 60);
     
     return diferenciaHoras >= 48;
-  };
-
-  const handleProfesionalSelect = () => {
-    if (formData.profesional) {
-      setShowCalendar(true);
-      generateAvailableHours();
-    }
-  };
-
-  const generateAvailableHours = () => {
-    // Generar horarios disponibles (8:00 a 18:00)
-    const hours = [];
-    for (let i = 8; i <= 18; i++) {
-      // Simular algunos horarios ocupados
-      if (Math.random() > 0.3) { // 70% de probabilidad de estar disponible
-        hours.push(`${i.toString().padStart(2, '0')}:00`);
-      }
-    }
-    setAvailableHours(hours);
-  };
-
-  const handleDateSelect = (date) => {
-    setSelectedDate(date);
-    setFormData(prev => ({ ...prev, fecha: date }));
-    generateAvailableHours(); // Regenerar horarios para la nueva fecha
-  };
-
-  const handleHourSelect = (hour) => {
-    setFormData(prev => ({ ...prev, hora: hour }));
-    setShowCalendar(false);
   };
 
   const handleSubmit = async (e) => {
@@ -1160,74 +1119,6 @@ const PatientDashboard = () => {
   };
 
 
-
-  const renderCalendar = () => {
-    if (!showCalendar) return null;
-
-    const today = new Date();
-    const days = [];
-    
-    // Generar próximos 30 días
-    for (let i = 0; i < 30; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      days.push(date);
-    }
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full mx-4 transition-colors duration-300">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white transition-colors duration-300">Seleccionar Fecha</h3>
-            <button onClick={() => setShowCalendar(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-300">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          
-          <div className="grid grid-cols-7 gap-2 mb-4">
-            {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
-              <div key={day} className="text-center text-sm font-medium text-gray-600 dark:text-gray-400 py-2 transition-colors duration-300">
-                {day}
-              </div>
-            ))}
-          </div>
-          
-          <div className="grid grid-cols-7 gap-2">
-            {days.map((date, index) => (
-              <button
-                key={index}
-                onClick={() => handleDateSelect(date.toISOString().split('T')[0])}
-                className={`p-2 text-sm rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900 transition-colors duration-300 ${
-                  selectedDate === date.toISOString().split('T')[0] 
-                    ? 'bg-blue-600 dark:bg-blue-500 text-white' 
-                    : 'text-gray-700 dark:text-gray-300'
-                }`}
-              >
-                {date.getDate()}
-              </button>
-            ))}
-          </div>
-          
-          {selectedDate && (
-            <div className="mt-4">
-              <h4 className="font-medium mb-2 text-gray-900 dark:text-white transition-colors duration-300">Horarios disponibles para {selectedDate}:</h4>
-              <div className="grid grid-cols-3 gap-2">
-                {availableHours.map((hour, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleHourSelect(hour)}
-                    className="p-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900 hover:border-blue-300 dark:hover:border-blue-500 text-gray-700 dark:text-gray-300 transition-colors duration-300"
-                  >
-                    {hour}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
 
   if (turnoRegistrado) {
     return (
@@ -1852,44 +1743,23 @@ const PatientDashboard = () => {
                   )}
                 </div>
 
-                {/* Fecha */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-300">
-                    <Calendar className="w-4 h-4 inline mr-2" />
-                    Fecha
-                  </label>
-                  <button
-                    type="button"
-                    onClick={handleProfesionalSelect}
-                    disabled={!formData.profesional}
-                    className={`w-full border rounded-lg px-4 py-3 text-left bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-300 focus:border-blue-500 disabled:bg-gray-100 dark:disabled:bg-slate-600 disabled:cursor-not-allowed transition-colors duration-300 ${
-                      turnoErrors.fecha ? 'border-red-300 focus:border-red-500' : 'border-gray-300 dark:border-slate-600'
-                    }`}
-                  >
-                    {formData.fecha || 'Selecciona fecha y hora'}
-                  </button>
-                  {turnoErrors.fecha && (
-                    <p className="mt-1 text-sm text-red-600 dark:text-red-400 transition-colors duration-300">{turnoErrors.fecha}</p>
-                  )}
-                </div>
-
-                {/* Hora */}
-                <div>
+                {/* Día y horario: se ven los horarios reales apenas se elige profesional */}
+                <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-300">
                     <Clock className="w-4 h-4 inline mr-2" />
-                    Hora
+                    Día y horario
                   </label>
-                  <input
-                    type="text"
-                    value={formData.hora}
-                    readOnly
-                    className={`w-full border rounded-lg px-4 py-3 bg-gray-50 dark:bg-slate-700 text-gray-900 dark:text-white transition-colors duration-300 ${
-                      turnoErrors.hora ? 'border-red-300 focus:border-red-500' : 'border-gray-300 dark:border-slate-600'
-                    }`}
-                    placeholder="Se selecciona con la fecha"
+                  <HorarioPicker
+                    profesional={formData.profesional.split(' - ')[0]}
+                    fecha={formData.fecha}
+                    hora={formData.hora}
+                    onChange={({ fecha, hora }) => {
+                      setFormData(prev => ({ ...prev, fecha, hora }));
+                      setTurnoErrors(prev => ({ ...prev, fecha: '', hora: '' }));
+                    }}
                   />
-                  {turnoErrors.hora && (
-                    <p className="mt-1 text-sm text-red-600 dark:text-red-400 transition-colors duration-300">{turnoErrors.hora}</p>
+                  {(turnoErrors.fecha || turnoErrors.hora) && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400 transition-colors duration-300">{turnoErrors.hora || turnoErrors.fecha}</p>
                   )}
                 </div>
               </div>
@@ -2019,9 +1889,15 @@ const PatientDashboard = () => {
                            turno.estado || 'Sin estado'}
                         </span>
                         
-                        <div className="text-xs text-gray-500">
-                          ID: {turno.id || 'N/A'}
-                        </div>
+                        {/* Reprogramar: toque 1 del flujo (abre la hoja con un horario ya sugerido) */}
+                        {sePuedeReprogramar(turno) && (
+                          <button
+                            onClick={() => setTurnoAReprogramar(turno)}
+                            className="px-4 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-colors"
+                          >
+                            Reprogramar
+                          </button>
+                        )}
 
                         {/* Botón de cancelar - solo mostrar si no está cancelado */}
                         {turno.estado !== 'cancelado' && (
@@ -2273,7 +2149,21 @@ const PatientDashboard = () => {
       </div>
 
       {/* Calendario Modal */}
-      {renderCalendar()}
+      {turnoAReprogramar && (
+        <ReprogramarSheet
+          turno={turnoAReprogramar}
+          onClose={() => setTurnoAReprogramar(null)}
+          onDone={(actualizado) => {
+            setTurnos(prev => prev.map(t => (t.id === actualizado.id ? { ...t, ...actualizado } : t)));
+            addNotification({
+              type: 'turno',
+              message: `Reprogramaste tu turno con ${(actualizado.profesional || '').split(' - ')[0]}`,
+              action: 'ver-turnos',
+              actionData: { profesional: actualizado.profesional }
+            });
+          }}
+        />
+      )}
 
       {/* Modal de Éxito/Error */}
       {showSuccessModal && (
@@ -2602,6 +2492,15 @@ const PatientDashboard = () => {
                     ⚠️ No podrás usar la plataforma hasta que cambies tu contraseña
                   </p>
                 </div>
+
+                {/* Salida explícita (Nielsen 3): si no es buen momento, se puede salir y volver después */}
+                <button
+                  type="button"
+                  onClick={() => { logout(); navigate('/soy-paciente'); }}
+                  className="w-full h-11 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                >
+                  Ahora no, cerrar sesión
+                </button>
               </div>
             </div>
           </div>

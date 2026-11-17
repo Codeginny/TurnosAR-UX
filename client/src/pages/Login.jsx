@@ -55,7 +55,8 @@ const Login = () => {
       }
 
       login(userData);
-      navigate('/dashboard');
+      // El rediseño abre en el día de hoy, no en las métricas del mes
+      navigate('/professional/hoy');
 
     } catch (error) {
       console.error('Error en login:', error);

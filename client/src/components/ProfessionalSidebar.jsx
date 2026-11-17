@@ -8,13 +8,20 @@ import {
   MapPin, 
   Calendar, 
   BarChart3,
-  Home
+  Home,
+  CalendarCheck
 } from 'lucide-react';
 
 const ProfessionalSidebar = () => {
   const location = useLocation();
 
   const menuItems = [
+    {
+      path: '/professional/hoy',
+      name: 'Hoy',
+      icon: CalendarCheck,
+      description: 'Turnos del día y huecos libres'
+    },
     {
       path: '/dashboard',
       name: 'Dashboard',

@@ -35,6 +35,11 @@ async function autoMigrate() {
       ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
     `);
+    // Migración de profesionales: agregar columna direccion si no existe
+    await pool.query(`
+      ALTER TABLE profesionales 
+      ADD COLUMN IF NOT EXISTS direccion VARCHAR(200);
+    `);
     console.log('✅ Esquema de base de datos sincronizado automáticamente');
   } catch (err) {
     console.error('❌ Error al sincronizar esquema:', err);
@@ -68,7 +73,9 @@ const {
   resetPassword,
   validateCredentials,
   getProfessionals,
-  refreshToken
+  refreshToken,
+  updateProfessionalConsultorio,
+  getProfessionalProfile
 } = require('./controllers/authController');
 
 const {
@@ -81,7 +88,10 @@ const {
   createAppointment,
   getAppointmentsByPatient,
   getAllAppointments,
-  validateTokenAndRefund
+  validateTokenAndRefund,
+  getOccupiedSlots,
+  rescheduleAppointment,
+  updateAppointmentStatus
 } = require('./controllers/appointmentController');
 
 const {
@@ -307,6 +317,10 @@ app.put('/api/professional-change-password/:id', authenticateToken, authorize(['
 // Solo pacientes pueden cambiar su contraseña
 app.put('/api/patient-change-password/:id', authenticateToken, authorize(['patient']), changePatientPassword);
 
+// Solo profesionales pueden ver/editar su perfil y consultorio
+app.get('/api/professional/profile', authenticateToken, authorize(['professional']), getProfessionalProfile);
+app.put('/api/professional/consultorio', authenticateToken, authorize(['professional']), updateProfessionalConsultorio);
+
 // =============================================
 // ENDPOINTS DE GESTIÓN DE DATOS (Protegidos)
 // =============================================
@@ -332,6 +346,13 @@ app.get('/api/turnos/paciente/:id', authenticateToken, authorize(['patient']), g
 
 // Solo profesionales pueden ver todos los turnos
 app.get('/api/turnos', authenticateToken, authorize(['professional']), getAllAppointments);
+
+// Horarios ocupados de un profesional en una fecha (para mostrar horarios reales)
+app.get('/api/turnos/ocupados', authenticateToken, authorize(['patient', 'professional']), getOccupiedSlots);
+
+// Reprogramar y cambiar estado (validación de dueño en el controlador)
+app.patch('/api/turnos/:id/reprogramar', authenticateToken, authorize(['patient', 'professional']), rescheduleAppointment);
+app.patch('/api/turnos/:id/estado', authenticateToken, authorize(['patient', 'professional']), updateAppointmentStatus);
 
 // Validar token de obra social y reintegrar seña (para recepcionistas)
 app.put('/api/turnos/:id/validar-token', authenticateToken, authorize(['professional']), validateTokenAndRefund);

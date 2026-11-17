@@ -132,6 +132,13 @@ const Layout = () => {
               {user && !user.isPatient && (
                 <>
                   <NavLink 
+                    to="/professional/hoy" 
+                    className={({isActive}) => `px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-950/30'}`}
+                    onClick={closeMobileMenu}
+                  >
+                    Hoy
+                  </NavLink>
+                  <NavLink 
                     to="/dashboard" 
                     className={({isActive}) => `px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-950/30'}`}
                     onClick={closeMobileMenu}

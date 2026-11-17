@@ -36,6 +36,7 @@ import Collaborators from './pages/professional/Collaborators.jsx';
 import Banks from './pages/professional/Banks.jsx';
 import Addresses from './pages/professional/Addresses.jsx';
 import ProfessionalCalendar from './pages/professional/Calendar.jsx';
+import Hoy from './pages/professional/Hoy.jsx';
 
 // Layouts
 import ProfessionalLayout from './components/ProfessionalLayout.jsx';
@@ -71,6 +72,7 @@ function App() {
           
           {/* Rutas profesionales con layout específico */}
           <Route path="/professional" element={<ProfessionalLayout />}>
+            <Route path="hoy" element={<Hoy />} />
             <Route path="personal-info" element={<PersonalInfo />} />
             <Route path="account-data" element={<AccountData />} />
             <Route path="collaborators" element={<Collaborators />} />
