@@ -25,3 +25,6 @@ logfile
 
 # Notas locales de depuración
 CLAUDE_DEBUG.md
+
+# Dataset público (se descarga, ver ux-caso/datos-publicos/README.md)
+ux-caso/datos-publicos/*.csv

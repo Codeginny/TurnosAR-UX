@@ -1,0 +1,15 @@
+Turnos: 110521 · ausencia general: 20.2 %
+
+Ausencia según anticipación
+  Mismo día        38562 turnos  4.6 %
+  1 a 2 días       11938 turnos  22.7 %
+  3 a 7 días       20247 turnos  25.0 %
+  8 a 14 días      12025 turnos  30.5 %
+  15 a 30 días     17371 turnos  32.6 %
+  Más de 30 días   10378 turnos  33.0 %
+
+Recordatorio por SMS (turnos con 3 días o más; antes no se mandaban)
+  Con SMS   35482 turnos  27.6 %
+  Sin SMS   24539 turnos  32.7 %
+
+Pacientes con 2 faltas o más: 3223
